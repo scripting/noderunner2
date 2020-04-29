@@ -7,7 +7,6 @@ const filesystem = require ("davefilesystem");
 var shell = require ("shelljs");
 
 var config = { 
-	secondToRunEveryMinuteScripts: 0,
 	minuteToRunHourlyScripts: 0,
 	hourToRunOvernightScripts: 0, 
 	nameScriptsFolder: "scripts",
