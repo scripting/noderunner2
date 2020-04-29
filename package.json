@@ -1,0 +1,20 @@
+{
+	"name": "noderunner2",
+	"description": "Next generation of NodeRunner, based on knowing what I now know.",
+	"author": "Dave Winer <dave@scripting.com>",
+	"version": "1.4.1",
+	"scripts": {
+		"start": "node noderunner2.js"
+		},
+	"main": "noderunner2.js",
+	"dependencies" : {
+		"daveutils": "*",
+		"davefilesystem": "*",
+		"shelljs": "*",
+		"require-from-string": "*"
+		}, 
+	"license": "MIT",
+	"engines": {
+		"node": "*"
+		}
+	}
