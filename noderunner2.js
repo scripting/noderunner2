@@ -1,10 +1,15 @@
-var myVersion = "1.4.1", myProductName = "noderunner2";
+var myVersion = "1.4.3", myProductName = "noderunner2";
 
 const fs = require ("fs"); 
 const utils = require ("daveutils");
 const requireFromString = require ("require-from-string");
 const filesystem = require ("davefilesystem"); 
-var shell = require ("shelljs");
+const shell = require ("shelljs");
+
+const nameEverySecondFolder = "everySecond";
+const nameEveryMinuteFolder = "everyMinute";
+const nameEveryHourFolder = "everyHour";
+const nameOvernightFolder = "overnight";
 
 var config = { 
 	minuteToRunHourlyScripts: 0,
@@ -41,50 +46,61 @@ function writeJsonFile (path, data) {
 		});
 	}
 function runScript (f) {
-	var noderunner = {
+	var noderunner = { //functions called-scripts can use to access functionality within noderunner
+		utils, //scripts have access to all of utils
 		unixShellCommand: function (theCommand) {
 			return (shell.exec (theCommand, {silent: true}).stdout);
 			}
 		};
 	var leftcode = "module.exports = function (localStorage, noderunner) {", rightcode = "}";
 	fs.readFile (f, function (err, moduletext) {
-		var code = leftcode + moduletext.toString () + rightcode;
-		requireFromString (code) (localStorage, noderunner);
+		if (err) {
+			console.log ("runScript: err.message == " + err.message);
+			}
+		else {
+			var code = leftcode + moduletext.toString () + rightcode;
+			requireFromString (code) (localStorage, noderunner);
+			}
 		});
 	}
-function loopOverFolder (nameSubFolder, fileCallback, completionCallback) {
+function loopOverFolder (nameSubFolder, fileCallback) {
 	var folder = config.nameScriptsFolder + "/" + nameSubFolder + "/";
 	filesystem.sureFilePath (folder + "x", function () {
-		filesystem.recursivelyVisitFiles (folder, function visit (f) {
-			if (f !== undefined) {
+		fs.readdir (folder, function (err, theListOfFiles) {
+			theListOfFiles.forEach (function (f) {
 				if (utils.endsWith (f, ".js")) {
-					runScript (f);
+					runScript (folder + f);
 					if (fileCallback !== undefined) {
 						fileCallback (f);
 						}
 					}
-				}
-			}, completionCallback);
+				});
+			});
 		});
 	}
 function everySecond () {
-	loopOverFolder ("everySecond", undefined, function () {
-		writeJsonFile (config.localStoragePath, localStorage);
-		});
+	loopOverFolder (nameEverySecondFolder);
+	writeJsonFile (config.localStoragePath, localStorage);
 	}
 function everyMinute () {
 	var now = new Date ();
 	if (now.getMinutes () == config.minuteToRunHourlyScripts) {
 		everyHour ();
 		}
-	loopOverFolder ("everyMinute");
+	loopOverFolder (nameEveryMinuteFolder);
 	}
 function everyHour () {
 	var now = new Date ();
 	if (now.getHours () == config.hourToRunOvernightScripts) {
-		loopOverFolder ("overnight");
+		loopOverFolder (nameOvernightFolder);
 		}
-	loopOverFolder ("everyHour");
+	loopOverFolder (nameEveryHourFolder);
+	}
+function initFolders () {
+	filesystem.sureFilePath (nameEverySecondFolder + "x");
+	filesystem.sureFilePath (nameEveryMinuteFolder + "x");
+	filesystem.sureFilePath (nameEveryHourFolder + "x");
+	filesystem.sureFilePath (nameOvernightFolder + "x");
 	}
 function startup () {
 	console.log ("\n" + myProductName + " v" + myVersion);
@@ -94,6 +110,7 @@ function startup () {
 				localStorage [x] = theData [x];
 				}
 			}
+		initFolders ();
 		setInterval (everySecond, 1000); 
 		utils.runEveryMinute (everyMinute);
 		});
